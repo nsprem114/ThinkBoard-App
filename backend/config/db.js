@@ -2,10 +2,25 @@ import mongoose from "mongoose";
 
 export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    console.log(`DB Connected : ${conn.connection.host}`);
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log(`DB Connected: ${conn.connection.host}`);
+
+    mongoose.connection.on("disconnected", () => {
+      console.warn("MongoDB disconnected!");
+    });
+
+    process.on("SIGINT", async () => {
+      await mongoose.connection.close();
+      console.log("MongoDB connection closed due to app termination");
+      process.exit(0);
+    });
+
+    return conn;
   } catch (error) {
-    console.log("Error Connecting DB", error.message);
+    console.error("Error connecting to DB:", error.message);
     process.exit(1);
   }
 };
